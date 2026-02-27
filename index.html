@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Nova | Premium Gaming & Electronics</title>
+
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Arial;}
+body{background:#f3f4f6;}
+
+header{
+background:#111827;
+color:white;
+padding:15px 40px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+}
+
+.logo{font-size:24px;font-weight:bold;color:#22c55e;}
+
+.search-box input{
+padding:8px;
+width:350px;
+border-radius:5px;
+border:none;
+}
+
+.cart-btn{
+background:#22c55e;
+padding:8px 15px;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.categories{
+display:flex;
+gap:15px;
+padding:15px 40px;
+background:white;
+border-bottom:1px solid #ddd;
+flex-wrap:wrap;
+}
+
+.categories button{
+padding:8px 15px;
+border:none;
+background:#e5e7eb;
+border-radius:5px;
+cursor:pointer;
+}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+gap:25px;
+padding:40px;
+}
+
+.card{
+background:white;
+border-radius:10px;
+padding:20px;
+box-shadow:0 4px 15px rgba(0,0,0,0.05);
+transition:0.3s;
+position:relative;
+}
+
+.card:hover{transform:translateY(-5px);}
+
+.badge{
+position:absolute;
+top:15px;
+left:15px;
+background:#ef4444;
+color:white;
+padding:4px 8px;
+font-size:12px;
+border-radius:4px;
+}
+
+.card img{
+width:160px;
+height:160px;
+object-fit:contain;
+display:block;
+margin:auto;
+}
+
+.price{
+margin-top:10px;
+font-size:18px;
+font-weight:bold;
+}
+
+.old-price{
+text-decoration:line-through;
+color:gray;
+font-size:14px;
+margin-left:5px;
+}
+
+.rating{color:#facc15;font-size:14px;}
+
+.card button{
+margin-top:10px;
+padding:8px;
+width:100%;
+border:none;
+background:#2563eb;
+color:white;
+border-radius:5px;
+cursor:pointer;
+}
+
+.cart-panel{
+position:fixed;
+right:-400px;
+top:0;
+width:370px;
+height:100%;
+background:white;
+box-shadow:-5px 0 15px rgba(0,0,0,0.2);
+padding:20px;
+transition:0.4s;
+overflow-y:auto;
+z-index:1000;
+}
+
+.cart-panel.active{right:0;}
+
+.cart-item{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:10px;
+font-size:14px;
+}
+
+.cart-item button{
+background:red;
+border:none;
+color:white;
+padding:3px 6px;
+cursor:pointer;
+}
+
+.total{
+font-weight:bold;
+margin-top:15px;
+}
+
+.checkout input{
+width:100%;
+padding:8px;
+margin-top:10px;
+}
+
+.checkout button{
+margin-top:10px;
+width:100%;
+padding:10px;
+background:#22c55e;
+border:none;
+color:white;
+cursor:pointer;
+border-radius:5px;
+}
+
+footer{
+background:#111827;
+color:white;
+text-align:center;
+padding:20px;
+margin-top:40px;
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">Tech Nova</div>
+<div class="search-box">
+<input type="text" placeholder="Search products..." onkeyup="searchProducts()" id="search">
+</div>
+<div class="cart-btn" onclick="toggleCart()">Cart (<span id="cart-count">0</span>)</div>
+</header>
+
+<div class="categories">
+<button onclick="filterCategory('all')">All</button>
+<button onclick="filterCategory('gaming')">Gaming</button>
+<button onclick="filterCategory('mobile')">Mobiles</button>
+<button onclick="filterCategory('laptop')">Laptops</button>
+<button onclick="filterCategory('accessories')">Accessories</button>
+</div>
+
+<section class="products" id="product-list"></section>
+
+<div class="cart-panel" id="cart-panel">
+<h2>Your Cart</h2>
+<div id="cart-items"></div>
+<div class="total">Total: $<span id="cart-total">0</span></div>
+
+<div class="checkout">
+<input type="text" id="name" placeholder="Your Name">
+<input type="email" id="email" placeholder="Your Email">
+<button onclick="placeOrder()">Place Order</button>
+</div>
+</div>
+
+<footer>
+© 2026 Tech Nova | Premium Gaming & Electronics Store
+</footer>
+
+<script>
+const products=[
+{name:"PlayStation 5",price:499,old:549,category:"gaming",rating:"★★★★★",badge:"Best Seller"},
+{name:"Xbox Series X",price:499,old:549,category:"gaming",rating:"★★★★☆",badge:"Hot"},
+{name:"Nintendo Switch OLED",price:349,old:399,category:"gaming",rating:"★★★★★",badge:""},
+{name:"iPhone 15 Pro",price:999,old:1099,category:"mobile",rating:"★★★★★",badge:"New"},
+{name:"Samsung Galaxy S24 Ultra",price:1199,old:1299,category:"mobile",rating:"★★★★☆",badge:""},
+{name:"ASUS ROG Strix G16",price:1499,old:1599,category:"laptop",rating:"★★★★★",badge:"Top Rated"},
+{name:"Alienware m16",price:1799,old:1999,category:"laptop",rating:"★★★★★",badge:""},
+{name:"Razer BlackShark V2",price:99,old:129,category:"accessories",rating:"★★★★☆",badge:"Deal"},
+{name:"Logitech G502 HERO",price:49,old:69,category:"accessories",rating:"★★★★★",badge:""}
+];
+
+let cart=[];
+
+function displayProducts(filter="all"){
+const list=document.getElementById("product-list");
+list.innerHTML="";
+products.filter(p=>filter==="all"||p.category===filter)
+.forEach(p=>{
+list.innerHTML+=`
+<div class="card">
+${p.badge?`<div class="badge">${p.badge}</div>`:""}
+<img src="https://via.placeholder.com/160">
+<h3>${p.name}</h3>
+<div class="rating">${p.rating}</div>
+<div class="price">$${p.price} <span class="old-price">$${p.old}</span></div>
+<button onclick="addToCart('${p.name}',${p.price})">Add to Cart</button>
+</div>`;
+});
+}
+displayProducts();
+
+function filterCategory(cat){displayProducts(cat);}
+
+function searchProducts(){
+let val=document.getElementById("search").value.toLowerCase();
+const list=document.getElementById("product-list");
+list.innerHTML="";
+products.filter(p=>p.name.toLowerCase().includes(val))
+.forEach(p=>{
+list.innerHTML+=`
+<div class="card">
+<img src="https://via.placeholder.com/160">
+<h3>${p.name}</h3>
+<div class="rating">${p.rating}</div>
+<div class="price">$${p.price}</div>
+<button onclick="addToCart('${p.name}',${p.price})">Add to Cart</button>
+</div>`;
+});
+}
+
+function addToCart(name,price){
+cart.push({name,price});
+updateCart();
+}
+
+function updateCart(){
+document.getElementById("cart-count").innerText=cart.length;
+let items=document.getElementById("cart-items");
+items.innerHTML="";
+let total=0;
+cart.forEach((item,i)=>{
+total+=item.price;
+items.innerHTML+=`
+<div class="cart-item">
+${item.name} - $${item.price}
+<button onclick="removeItem(${i})">X</button>
+</div>`;
+});
+document.getElementById("cart-total").innerText=total;
+}
+
+function removeItem(i){
+cart.splice(i,1);
+updateCart();
+}
+
+function toggleCart(){
+document.getElementById("cart-panel").classList.toggle("active");
+}
+
+(function(){emailjs.init("YOUR_PUBLIC_KEY");})();
+
+function placeOrder(){
+if(cart.length===0){alert("Cart empty");return;}
+let name=document.getElementById("name").value;
+let email=document.getElementById("email").value;
+let total=document.getElementById("cart-total").innerText;
+
+emailjs.send("YOUR_SERVICE_ID","YOUR_TEMPLATE_ID",{
+customer_name:name,
+customer_email:email,
+order_details:cart.map(i=>i.name).join(", "),
+order_total:total
+}).then(()=>{
+alert("Order Sent Successfully!");
+cart=[];
+updateCart();
+});
+}
+</script>
+
+</body>
+</html>
+ 
